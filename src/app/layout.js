@@ -12,9 +12,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Colabify — Social Media Branding Agency",
+  title: "Colabify — Ads, Social & Conversion",
   description:
-    "Colabify is a social media branding agency crafting strategy, content, and campaigns that convert.",
+    "Colabify runs performance ad campaigns, social and influencer marketing, and creative that converts — for brands that need pipeline, not vanity metrics.",
 };
 
 export default function RootLayout({ children }) {
