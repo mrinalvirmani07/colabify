@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { Lock, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { analyzeWithMode } from "@/lib/analyzer/mockEngine";
+import { buildDashboardData } from "@/lib/analyzer/dashboardData";
+import { ReportDashboard } from "@/components/analyzer/ReportDashboard";
 
 const initialForm = {
   ctr: "",
@@ -75,6 +77,10 @@ export default function AnalyzerPage() {
   const [error, setError] = useState("");
   const [lead, setLead] = useState({ name: "", email: "", company: "" });
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const dashboardData = useMemo(() => {
+    if (!report) return null;
+    return buildDashboardData({ form, report, analysisMode });
+  }, [form, report, analysisMode]);
 
   const signalFlags = useMemo(() => {
     const ctr = Number(form.ctr);
@@ -122,8 +128,11 @@ export default function AnalyzerPage() {
     <div className="min-h-screen text-slate-900">
       <SiteHeader currentPath="/analyzer" />
 
-      <main className="mx-auto grid w-full max-w-6xl gap-8 px-6 pb-20 pt-10 lg:grid-cols-[1fr_1fr]">
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <main className="mx-auto w-full max-w-6xl space-y-8 px-6 pb-20 pt-10">
+        {report ? <ReportDashboard data={dashboardData} /> : null}
+
+        <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
             <Sparkles className="h-3.5 w-3.5" />
             Colabify AI Tool (MVP)
@@ -282,15 +291,15 @@ export default function AnalyzerPage() {
             </button>
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
           </form>
-        </section>
+          </section>
 
-        <section className="space-y-4">
-          {!report ? (
-            <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-500">
-              Submit campaign inputs to generate your report.
-            </div>
-          ) : (
-            <>
+          <section className="space-y-4">
+            {!report ? (
+              <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-500">
+                Submit campaign inputs to generate your report.
+              </div>
+            ) : (
+              <>
               {analysisMode === "consumer_intelligence" ? (
                 <>
                   <Section title="👀 Attention Analysis" icon="">
@@ -360,49 +369,50 @@ export default function AnalyzerPage() {
                 </>
               )}
 
-              {!isUnlocked ? (
-                <section className="rounded-2xl border border-violet-200 bg-violet-50 p-6">
-                  <h4 className="text-base font-semibold text-slate-900">
-                    Unlock high-converting ad ideas
-                  </h4>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Share details to unlock hooks and creative angles.
-                  </p>
-                  <form onSubmit={handleLeadSubmit} className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <input
-                      placeholder="Name"
-                      value={lead.name}
-                      onChange={(e) => setLead((p) => ({ ...p, name: e.target.value }))}
-                      className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
-                      required
-                    />
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      value={lead.email}
-                      onChange={(e) => setLead((p) => ({ ...p, email: e.target.value }))}
-                      className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
-                      required
-                    />
-                    <input
-                      placeholder="Company"
-                      value={lead.company}
-                      onChange={(e) => setLead((p) => ({ ...p, company: e.target.value }))}
-                      className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
-                      required
-                    />
-                    <button
-                      type="submit"
-                      className="sm:col-span-3 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
-                    >
-                      Unlock Now
-                    </button>
-                  </form>
-                </section>
-              ) : null}
-            </>
-          )}
-        </section>
+                {!isUnlocked ? (
+                  <section className="rounded-2xl border border-violet-200 bg-violet-50 p-6">
+                    <h4 className="text-base font-semibold text-slate-900">
+                      Unlock high-converting ad ideas
+                    </h4>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Share details to unlock hooks and creative angles.
+                    </p>
+                    <form onSubmit={handleLeadSubmit} className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <input
+                        placeholder="Name"
+                        value={lead.name}
+                        onChange={(e) => setLead((p) => ({ ...p, name: e.target.value }))}
+                        className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                        required
+                      />
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        value={lead.email}
+                        onChange={(e) => setLead((p) => ({ ...p, email: e.target.value }))}
+                        className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                        required
+                      />
+                      <input
+                        placeholder="Company"
+                        value={lead.company}
+                        onChange={(e) => setLead((p) => ({ ...p, company: e.target.value }))}
+                        className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        className="sm:col-span-3 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
+                      >
+                        Unlock Now
+                      </button>
+                    </form>
+                  </section>
+                ) : null}
+              </>
+            )}
+          </section>
+        </div>
       </main>
     </div>
   );
