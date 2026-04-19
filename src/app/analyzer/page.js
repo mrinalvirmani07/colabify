@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Lock, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
+import { analyzeWithMode } from "@/lib/analyzer/mockEngine";
 
 const initialForm = {
   ctr: "",
@@ -12,7 +13,6 @@ const initialForm = {
   adCopy: "",
   roas: "",
   targetAudience: "",
-  platform: "Meta",
   industry: "",
 };
 
@@ -69,6 +69,7 @@ function LockedBlock({ title, items, unlocked }) {
 
 export default function AnalyzerPage() {
   const [form, setForm] = useState(initialForm);
+  const [analysisMode, setAnalysisMode] = useState("consumer_intelligence");
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -85,26 +86,27 @@ export default function AnalyzerPage() {
     return { cpcHigh, cpmHigh, ctrLow };
   }, [form.ctr, form.cpc, form.cpm]);
 
-  async function handleAnalyze(e) {
+  function handleAnalyze(e) {
     e.preventDefault();
     setError("");
     setLoading(true);
     setIsUnlocked(false);
 
-    try {
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+    if (!form.ctr || !form.cpc || !form.cpm || !form.adType || !form.adCopy) {
+      setError("Please fill all required fields.");
+      setLoading(false);
+      return;
+    }
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to analyze");
-      }
-      setReport(data.report);
-    } catch (err) {
-      setError(err.message || "Unexpected error");
+    try {
+      const payload = {
+        ...form,
+        audience: form.targetAudience,
+      };
+      const data = analyzeWithMode(payload, analysisMode);
+      setReport(data);
+    } catch {
+      setError("Failed to generate analysis.");
     } finally {
       setLoading(false);
     }
@@ -133,6 +135,36 @@ export default function AnalyzerPage() {
             Diagnose underperforming ads with structured reasoning and actionable
             improvement ideas.
           </p>
+
+          <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Analysis Mode
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setAnalysisMode("platform_metrics")}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                  analysisMode === "platform_metrics"
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-300 bg-white text-slate-700"
+                }`}
+              >
+                Platform Metrics Mode
+              </button>
+              <button
+                type="button"
+                onClick={() => setAnalysisMode("consumer_intelligence")}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                  analysisMode === "consumer_intelligence"
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-300 bg-white text-slate-700"
+                }`}
+              >
+                Consumer Intelligence Mode
+              </button>
+            </div>
+          </div>
 
           <form onSubmit={handleAnalyze} className="mt-6 space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
@@ -171,7 +203,7 @@ export default function AnalyzerPage() {
               </label>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-1">
               <label className="text-sm">
                 Ad Type *
                 <select
@@ -183,18 +215,6 @@ export default function AnalyzerPage() {
                   <option>Video</option>
                   <option>Image</option>
                   <option>Carousel</option>
-                </select>
-              </label>
-              <label className="text-sm">
-                Platform
-                <select
-                  value={form.platform}
-                  onChange={(e) => setForm((p) => ({ ...p, platform: e.target.value }))}
-                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
-                >
-                  <option>Meta</option>
-                  <option>Google</option>
-                  <option>TikTok</option>
                 </select>
               </label>
             </div>
@@ -271,45 +291,82 @@ export default function AnalyzerPage() {
             </div>
           ) : (
             <>
-              <Section title="🔍 What’s Going Wrong" icon="">
-                <List items={report.diagnosis} />
-              </Section>
-
-              <Section title="🧠 Why It’s Happening" icon="">
-                <List items={report.root_causes} />
-              </Section>
-
-              <Section title="🎯 Creative Breakdown" icon="">
-                <List items={report.creative_analysis} />
-              </Section>
-
-              <Section title="🚀 How to Fix It" icon="">
-                <List items={report.fixes?.slice(0, 2)} />
-              </Section>
-
-              <Section title="💡 New Ad Hooks" icon="">
-                <LockedBlock
-                  title="New hooks"
-                  items={report.new_hooks}
-                  unlocked={isUnlocked}
-                />
-              </Section>
-
-              <Section title="🎥 New Ad Concepts" icon="">
-                <LockedBlock
-                  title="Ad and script ideas"
-                  items={[...(report.ad_ideas || []), ...(report.script_ideas || [])]}
-                  unlocked={isUnlocked}
-                />
-              </Section>
+              {analysisMode === "consumer_intelligence" ? (
+                <>
+                  <Section title="👀 Attention Analysis" icon="">
+                    <List items={report.attention_analysis} />
+                  </Section>
+                  <Section title="🤔 Interest Analysis" icon="">
+                    <List items={report.interest_analysis} />
+                  </Section>
+                  <Section title="❤️ Desire Analysis" icon="">
+                    <List items={report.desire_analysis} />
+                  </Section>
+                  <Section title="🎯 Action Analysis" icon="">
+                    <List items={report.action_analysis} />
+                  </Section>
+                  <Section title="🧠 Consumer Insights" icon="">
+                    <List items={report.consumer_psychology_insights} />
+                  </Section>
+                  <Section title="🚨 Funnel Leaks" icon="">
+                    <List items={report.funnel_leaks} />
+                  </Section>
+                  <Section title="🚀 Fix Recommendations" icon="">
+                    <List items={report.fix_recommendations?.slice(0, 2)} />
+                  </Section>
+                  <Section title="💡 New Hooks" icon="">
+                    <LockedBlock
+                      title="New hooks"
+                      items={report.new_hooks}
+                      unlocked={isUnlocked}
+                    />
+                  </Section>
+                  <Section title="🎨 Creative Angles" icon="">
+                    <LockedBlock
+                      title="Creative angles"
+                      items={report.creative_angles}
+                      unlocked={isUnlocked}
+                    />
+                  </Section>
+                </>
+              ) : (
+                <>
+                  <Section title="🔍 What’s Going Wrong" icon="">
+                    <List items={report.diagnosis} />
+                  </Section>
+                  <Section title="🧠 Why It’s Happening" icon="">
+                    <List items={report.root_causes} />
+                  </Section>
+                  <Section title="🎯 Creative Breakdown" icon="">
+                    <List items={report.creative_analysis} />
+                  </Section>
+                  <Section title="🚀 How to Fix It" icon="">
+                    <List items={report.fixes?.slice(0, 2)} />
+                  </Section>
+                  <Section title="💡 New Ad Hooks" icon="">
+                    <LockedBlock
+                      title="New hooks"
+                      items={report.new_hooks}
+                      unlocked={isUnlocked}
+                    />
+                  </Section>
+                  <Section title="🎥 New Ad Concepts" icon="">
+                    <LockedBlock
+                      title="Ad ideas"
+                      items={report.ad_ideas}
+                      unlocked={isUnlocked}
+                    />
+                  </Section>
+                </>
+              )}
 
               {!isUnlocked ? (
                 <section className="rounded-2xl border border-violet-200 bg-violet-50 p-6">
                   <h4 className="text-base font-semibold text-slate-900">
-                    Unlock full report + high-converting ad ideas
+                    Unlock high-converting ad ideas
                   </h4>
                   <p className="mt-1 text-sm text-slate-600">
-                    Share details to unlock hooks, concepts, and script angles.
+                    Share details to unlock hooks and creative angles.
                   </p>
                   <form onSubmit={handleLeadSubmit} className="mt-4 grid gap-3 sm:grid-cols-3">
                     <input
