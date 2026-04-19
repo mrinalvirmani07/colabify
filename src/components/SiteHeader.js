@@ -22,6 +22,12 @@ export function SiteHeader({ currentPath = "/" }) {
             Campaigns
           </Link>
           <Link
+            href="/analyzer"
+            className={currentPath === "/analyzer" ? active : inactive}
+          >
+            Analyzer
+          </Link>
+          <Link
             href="/portfolio"
             className={currentPath === "/portfolio" ? active : inactive}
           >
